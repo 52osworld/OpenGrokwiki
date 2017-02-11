@@ -1,3 +1,4 @@
-Welcome to the OpenGrok wiki!
+欢迎查看 OpenGrok wiki!
 
-Please navigate the wiki pages in the right side bar.
+请使用右边的目录浏览。
+
