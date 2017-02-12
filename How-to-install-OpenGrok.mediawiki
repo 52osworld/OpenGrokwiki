@@ -1,10 +1,8 @@
-{OpenGrok can be installed and used under different use cases, we will just show how to use the wrapper script. Advanced usage depends on your knowledge of running java applications and command line options of {OpenGrok.
-Note, that you '''need''' the '''index setup''' no matter what use case you plan to use. Without indexes {Opengrok will be simply useless.
-This document is a live document, we are updating it as the new versions/changes come out (note the date at the right bottom of the page)
+OpenGrok 可以使用多种不同方式安装和使用，我们在这只介绍使用wrapper script 的例子。更高阶的配置需要了解Java应用和OpenGrok命令行选项。注意，不管你使用什么方式安装，都需要设置 '''index setup''', OpenGrok 没有 indexes 无法运行。这个文档会随时更新。
 
-== Requirements ==
+== 需求 ==
 
-You need the following:
+你需要安装如下软件:
 
 * [http://www.oracle.com/technetwork/java/ JDK] 1.8 or higher
 * {OpenGrok '''binaries''' from https://github.com/OpenGrok/OpenGrok/releases (either the package for Solaris, or .tar.gz with binaries, NOT the src !)
@@ -15,44 +13,43 @@ You need the following:
 * a recent browser for clients - IE, Firefox, recent Chrome or Safari
 * sufficient ULIMIT settings (refer to README)
 
-== Recommended links to read for advanced users ==
+== 建议高阶用户阅读如下链接 ==
 
 * [https://github.com/OpenGrok/OpenGrok/blob/master/OpenGrok Opengrok script trunk source]
 * [https://github.com/OpenGrok/OpenGrok/blob/master/doc/EXAMPLE.txt Sample setup]
 * [https://github.com/OpenGrok/OpenGrok/blob/master/src/org/opensolaris/opengrok/index/CommandLineOptions.java#L71 development trunk usage info (CommandLineOptions class]]
 * [https://github.com/OpenGrok/OpenGrok/blob/master/README.txt#L384 manual javadb installation for historycache to be kept in derby instead of plain files]
 
-== INDEX and web application setup ==
+== INDEX and web application 设置 ==
 
-After installing the package (e.g. <code>pkgadd -d ./OSOLopengrok-0.?.pkg</code>) or untgzing the binaries in your target directory (e.g. <code>cd your_target_dir ; gzcat opengrok-0.?.tar.gz | tar xf - </code>), you just need to create the index and then you can use the command line interface to grok your sources.
+安装完这些软件 (e.g. <code>pkgadd -d ./OSOLopengrok-0.?.pkg</code>) 或者解压文件到你的目录后 (e.g. <code>cd your_target_dir ; gzcat opengrok-0.?.tar.gz | tar xf - </code>), 你只需要创建index文件，然后就可以使用命令行运行查看你的源码了。
 
-It is also necessary to install SCM environment accessible by OpenGrok for your repositories for the history indexing to work.
+当然如果你需要查看repository的历史信息，那么还需安装对应的SCM 环境。
 
-=== Creating the index ===
+=== 创建 Index ===
 
-OpenGrok's command line use is a typical case where OpenGrok is deployed as indexing service on a webserver for an active source repository, which is updated automatically using scheduled cron jobs.
+当OpenGrok被部署好时，可以使用命令行自动定期更新索引。
 
-'''Project concept''' - one project is one directory underneath <code>SRC_ROOT</code> and usually contains a checkout of a project (or it's branch, version, ...) sources, it can have several attributes (in its XML description), note that interface of projects is being stabilized so it can change. Projects effectively replace need for more web applications with opengrok <code>.war</code> and leave you with one indexer and one web application serving MORE source code repositories - projects. A nice concept is to have directories underneath <code>SRC_ROOT</code> with a naming convention, thereby creating a good overview of projects (e.g. name-version-branch). Then you have a simple update script & simple index refresher script in place, which simplifies management of more repositories.
+'''Project 概念''' -  在 <code>SRC_ROOT</code> 目录下的每个目录都是一个Project。通常目录中会包含一个项目的源码checkout (or it's branch, version, ...) , 可以有几个属性 (在XML 文件中), 注意 项目接口已经很稳定，所以属性可以更改。 Projects effectively replace need for more web applications with opengrok <code>.war</code> and leave you with one indexer and one web application serving MORE source code repositories - projects. A nice concept is to have directories underneath <code>SRC_ROOT</code> with a naming convention, thereby creating a good overview of projects (e.g. name-version-branch). Then you have a simple update script & simple index refresher script in place, which simplifies management of more repositories.
 
 [[/images/setup-project.png]]
 
-==== <u>Step.0</u> - Setting up the Sources. Having the web application container ready. ====
+==== <u>Step.0</u> - 设置源码 Having the web application container ready. ====
 
-Source base must be available locally for OpenGrok to work efficiently. No changes are required to your source tree. If the code is under CVS or SVN, OpenGrok requires the '''checked out source''' tree under SRC_ROOT.
+源码必须在本地可以被OpenGrok访问才能工作，不需要改变源码目录结构。如果在使用CVS/SVN, 则需要检出源码到SRC_ROOT。
 
-'''Note:''' A local CVSROOT (or SVN if opengrok version less than 0.7) repository must be available. File history will not be fetched from a remote server for CVS (& SVN if opengrok version less than 0.7) !. For newer opengrok versions you must use option <code>-r on</code> for remote repositories history to be indexed, also note this can be more resource (time,cpu,network) demanding.
-Note also that OpenGrok ignores symbolic links.
+'''Note:''' 如果opengrok版本低于0.7，历史记录不能从远程服务器获取，需要设置本地CVSROOT/SVNROOT repository。 较高版本则可以使用参数<code>-r on</code> 获取远程repositories 历史，当然这样也会消耗更多资源 (time,cpu,network)。注意，OpenGrok 会忽略符号链接。
 
-Please install web application container of your choice (e.g. [http://tomcat.apache.org/ Tomcat],[https://glassfish.dev.java.net/ GlassFish] or [http://www.sun.com/software/products/appsrvr Sun Java Application Server]) before going to the next step and make sure it's started.
+安装之前需要先安装web 应用，并确认web应用可用。(e.g. [http://tomcat.apache.org/ Tomcat],[https://glassfish.dev.java.net/ GlassFish] or [http://www.sun.com/software/products/appsrvr Sun Java Application Server]) 
 
-==== <u>Step.1</u> - Deploy the web application ====
+==== <u>Step.1</u> - 部署web 应用 ====
 
-We provided you with OpenGrok wrapper script, which should aid in deploying the web application.
-Please change to opengrok directory (can vary on your system)
+我们提供了一个可以部署web 应用的wrapper script。
+先切换到安装OpenGrok目录 (can vary on your system)
 
  # cd /usr/opengrok/bin
 
-and run 
+运行
 
  # ./OpenGrok deploy
 
